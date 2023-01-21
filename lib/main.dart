@@ -1,99 +1,138 @@
 import 'package:flutter/material.dart';
 
+import './dummy_data.dart';
+
+import './screens/filters_screen.dart';
+
+import './screens/category_meals_screen.dart';
+import './screens/categories_screen.dart';
+import './screens/meal_detail.dart';
+import './screens/tabs_screen.dart';
+import 'models/meal.dart';
+
 void main() => runApp(MyApp());
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class MyApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      // Application name
-      title: 'Flutter Stateful Clicker Counter',
-      theme: ThemeData(
-        // Application theme data, you can set the colors for the application as
-        // you want
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Clicker Counter Home Page'),
-    );
-  }
+  State<MyApp> createState() => _MyAppState();
 }
 
-class MyHomePage extends StatefulWidget {
-  final String title;
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+class _MyAppState extends State<MyApp> {
+  // O professor usou este mapa para salvar as configurações enntre tela.
+  // Mas tem método próprio para isto: "SharedPreferences", que fica salvo.
+  Map<String, bool> _filters = {
+    'gluten': false,
+    'lactose': false,
+    'vegan': false,
+    'vegetarian': false,
+  };
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  List<Meal> _availableMeals = DUMMY_MEALS;
+  List<Meal> _favoriteMeals = [];
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+  void _setFilters(Map<String, bool> filterData) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _filters = filterData;
+
+      _availableMeals = DUMMY_MEALS.where((meal) {
+        // ...
+        if (_filters['gluten'] == true && !meal.isGlutenFree) {
+          return false;
+        }
+        if (_filters['lactose'] == true && !meal.isLactoseFree) {
+          return false;
+        }
+        if (_filters['vegan'] == true && !meal.isVegan) {
+          return false;
+        }
+        if (_filters['vegetarian'] == true && !meal.isVegetarian) {
+          return false;
+        }
+        return true;
+      }).toList();
     });
   }
 
+  void _toggleFavorite(String mealId) {
+    final existingIndex =
+        _favoriteMeals.indexWhere((meal) => meal.id == mealId);
+    if (existingIndex >= 0) {
+      setState(() {
+        _favoriteMeals.removeAt(existingIndex);
+      });
+    } else {
+      _favoriteMeals.add(DUMMY_MEALS.firstWhere((meal) => mealId == meal.id));
+    }
+  }
+
+  bool _isMealFavorite(String id) {
+    return _favoriteMeals.any((meal) => meal.id == id);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: TextStyle(fontSize: 25),
-            ),
-          ],
+    return MaterialApp(
+      title: 'DeliMeals',
+      theme: ThemeData(
+        canvasColor: Color.fromRGBO(255, 254, 229, 1),
+        fontFamily: 'Raleway',
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: Colors.purple,
+          errorColor: Colors.red,
+        ).copyWith(
+          secondary: Colors.amber,
         ),
+        textTheme: ThemeData.light().textTheme.copyWith(
+            bodyText1: TextStyle(
+              color: Color.fromRGBO(20, 51, 51, 1),
+            ),
+            bodyText2: TextStyle(
+              color: Color.fromRGBO(20, 51, 51, 1),
+            ),
+            headline6: TextStyle(
+                // título.
+                fontSize: 20,
+                fontFamily: 'RobotoCondensed',
+                fontWeight: FontWeight.bold,
+                color: Colors.white),
+            headline5: TextStyle(
+                // título.
+                fontSize: 20,
+                fontFamily: 'RobotoCondensed',
+                fontWeight: FontWeight.bold,
+                color: Colors.black)),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      //home: CategoriesScreen(), // Marca a primeira Screen do aplicativo.
+      //Por padrão o que tiver o nome: "/" no routes, será a primeira tela a ser aberta.
+      //initialRoute: '/', // Não precisa setar! Mas pode mudar.
+      routes: {
+        // Este "/" no início é apenas uma conveção, que vem da web: www.site.com/categories.
+        // Não irá passar o argumento aqui! (provavelmente)
+        '/': (context) => TabsScreen(favoriteMeals: _favoriteMeals),
+        // '/category-meals': (context) => CategoryMealsScreen(),
+        CategoryMealsScreen.routeName: (context) => CategoryMealsScreen(
+            _availableMeals), // Uma forma alternativa, para evitar typos.
+        MealDetailsScreen.routeName: (context) => MealDetailsScreen(
+            toggleFavorite: _toggleFavorite, isMealFavorite: _isMealFavorite),
+        FilterScreen.routName: (context) =>
+            FilterScreen(saveFilters: _setFilters, currentFilters: _filters)
+      },
+      onGenerateRoute: ((settings) {
+        //Chamará se a rota chamada não estiver registrada no "routes", muitas vezes não precisa desta função.
+        // pode ser usado quando se cria nome de rotas de forma dinâmica
+        print(settings.arguments);
+        print(settings.name);
+        return MaterialPageRoute(
+          builder: (ctx) => CategoriesScreen(),
+        );
+      }),
+      onUnknownRoute: (settings) {
+        // Executa quando não consegue achar uma rota de forma alguma.
+
+        return MaterialPageRoute(
+          builder: (ctx) => CategoriesScreen(),
+        );
+      },
     );
   }
 }
